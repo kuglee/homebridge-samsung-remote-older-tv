@@ -1,16 +1,15 @@
 {
-  "name": "homebridge-samsung-remote",
+  "name": "homebridge-samsung-remote-older-tv",
   "version": "1.2.0",
-  "description": "Homebridge plugin for Samsung TVs 2016 and newer",
-  "author": "nitaybz",
+  "description": "Homebridge plugin for Samsung TVs 2014 and older",
+  "author": "kuglee",
   "dependencies": {
     "wake_on_lan": ">=0.0.3",
-    "samsung-tv-remote": ">=1.0.0"
+    "samsung-remote": ">=1.4.1"
   },
   "keywords": [
     "homebridge-plugin",
     "samsung",
-    "tizen",
     "samsung-tv",
     "smart-tv",
     "smarttv",
@@ -18,10 +17,10 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git://github.com/nitaybz/homebridge-samsung-remote.git"
+    "url": "https://github.com/kuglee/homebridge-samsung-remote-older-tv.git"
   },
   "bugs": {
-    "url": "http://github.com/nitaybz/homebridge-samsung-remote/issues"
+    "url": "http://github.com/kuglee/homebridge-samsung-remote-older-tv/issues"
   },
   "engines": {
     "node": ">=0.12.0",

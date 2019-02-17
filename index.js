@@ -1,6 +1,6 @@
 var Service, Characteristic;
 var wol = require('wake_on_lan');
-var SamsungTvRemote = require('samsung-tv-remote');
+var SamsungTvRemote = require('samsung-remote');
 
 
 module.exports = function(homebridge) {
@@ -101,8 +101,8 @@ SamsungTV.prototype._getOn = function(callback) {
         callback(null, false);
     } else {
         var alive = false
-        accessory.TV.isTvAlive(function(success) {
-            if (success) alive = true
+        accessory.TV.isAlive(function(err) {
+            if (!err) alive = true
         });
         setTimeout(function(){
             if (!alive) {
@@ -124,8 +124,8 @@ SamsungTV.prototype._setOn = function(on, callback) {
             clearTimeout(accessory.timer_off);
             accessory.timer_off = null
             accessory.log('Powering OFF is in progress, Turning ON via \'KEY_POWER\' command');
-            accessory.TV.isTvAlive(function(success) {
-                if (!success) {
+            accessory.TV.isAlive(function(err) {
+                if (err) {
                     accessory.log('Can\'t reach TV, Trying via \'Wake On Lan\'');
                     wol.wake(accessory.mac, function(err) {
                         if (err) {
@@ -136,15 +136,19 @@ SamsungTV.prototype._setOn = function(on, callback) {
                         }
                     });
                 } else {
-                    accessory.TV.sendKey('KEY_POWER')
+                    accessory.TV.send('KEY_POWER', (err) => {
+                        if (err) {
+                            throw new Error(err);
+                        }
+                    });
                     accessory.log('TV powered ON');
                     callback();
                 }
             });
         } else {
             var alive = false
-            accessory.TV.isTvAlive(function(success) {
-                if (success) alive = true
+            accessory.TV.isAlive(function(err) {
+                if (!err) alive = true
             });
             setTimeout(function(){
                 if (!alive) {
@@ -167,12 +171,16 @@ SamsungTV.prototype._setOn = function(on, callback) {
             accessory.log('Powering OFF is already in progress');
             callback();
         } else {
-            accessory.TV.isTvAlive(function(success) {
-                if (!success) {
+            accessory.TV.isAlive(function(err) {
+                if (err) {
                     accessory.log('TV is already OFF');
                     callback();
                 } else {
-                    accessory.TV.sendKey('KEY_POWER')
+                    accessory.TV.send('KEY_POWER', (err) => {
+                        if (err) {
+                            throw new Error(err);
+                        }
+                    });
                     accessory.timer_off = setTimeout(function(){
                         accessory.timer_off = null;
                     },3000)
@@ -196,12 +204,16 @@ SamsungTV.prototype._setMute = function(mute, callback) {
     var accessory = this;
 
     accessory.log('Sending mute command to TV');
-    accessory.TV.isTvAlive(function(success) {
-        if (!success) {
+    accessory.TV.isAlive(function(err) {
+        if (err) {
             accessory.log('TV is OFF');
             callback();
         } else {
-            accessory.TV.sendKey('KEY_MUTE');
+            accessory.TV.send('KEY_MUTE', (err) => {
+                if (err) {
+                    throw new Error(err);
+                }
+            });
             accessory.log('Mute command sent successfully');
             callback();
         }
@@ -224,21 +236,33 @@ SamsungTV.prototype._setChannel = function(state, callback) {
     var accessory = this;
     var channel = accessory.channel.toString()
     accessory.log('Setting Channel ' + channel + ' on TV');
-    accessory.TV.isTvAlive(function(success) {
-        if (!success) {
+    accessory.TV.isAlive(function(err) {
+        if (err) {
             accessory.log('TV is OFF');
             callback();
         } else {
-            accessory.TV.sendKey('KEY_CHUP');
+            accessory.TV.send('KEY_CHUP', (err) => {
+                if (err) {
+                    throw new Error(err);
+                }
+            });
             var i=0;
             setTimeout(function(){
                 var intervalCommands = setInterval(function(){
                     if (i < channel.length){
-                        accessory.TV.sendKey('KEY_' + channel.charAt(i))
+                        accessory.TV.send('KEY_' + channel.charAt(i), (err) => {
+                            if (err) {
+                                throw new Error(err);
+                            }
+                        });
                         i++
                     } else {
                         clearInterval(intervalCommands)
-                        accessory.TV.sendKey('KEY_ENTER');
+                        accessory.TV.send('KEY_ENTER', (err) => {
+                            if (err) {
+                                throw new Error(err);
+                            }
+                        });
                         accessory.log('Channel' + channel + ' is set');
                     }
                 }, 1000)
@@ -264,21 +288,29 @@ SamsungTV.prototype._setCustom = function(state, callback) {
     var accessory = this;
 
     accessory.log('Sending ' + (Array.isArray(accessory.command) ? accessory.command.join(', ') : accessory.command) + ' command(s) to TV');
-    accessory.TV.isTvAlive(function(success) {
-        if (!success) {
+    accessory.TV.isAlive(function(err) {
+        if (err) {
             accessory.log('TV is OFF');
 
             callback();
         } else {
             // Command as array
             if (Array.isArray(accessory.command)) {
-                accessory.TV.sendKey(accessory.command[0])
+                accessory.TV.send(accessory.command[0], (err) => {
+                    if (err) {
+                        throw new Error(err);
+                    }
+                });
                 accessory.log(accessory.command[0] + ' command sent');
                 callback();
 
                 var repeatSend = setInterval(function(){
                     if (counter < accessory.command.length){
-                        accessory.TV.sendKey(accessory.command[counter])
+                        accessory.TV.send(accessory.command[counter], (err) => {
+                            if (err) {
+                                throw new Error(err);
+                            }
+                        });
                         accessory.log(accessory.command[counter] + ' command sent');
                         counter++
                     } else {
@@ -287,13 +319,21 @@ SamsungTV.prototype._setCustom = function(state, callback) {
                 }, accessory.delay)
             // Command as string
             } else {
-                accessory.TV.sendKey(accessory.command)
+                accessory.TV.send(accessory.command, (err) => {
+                    if (err) {
+                        throw new Error(err);
+                    }
+                });
                 accessory.log(accessory.command + ' command sent');
                 callback();
 
                 var repeatSend = setInterval(function(){
                     if (counter < accessory.repeat){
-                        accessory.TV.sendKey(accessory.command)
+                        accessory.TV.send(accessory.command, (err) => {
+                            if (err) {
+                                throw new Error(err);
+                            }
+                        });
                         counter++
                     } else {
                         clearInterval(repeatSend)
